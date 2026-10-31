@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs'
 import { createApp, createError, createRouter, toWebHandler, type H3Event } from 'h3'
 import mongoose from 'mongoose'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import { connectDb } from '../server/utils/db'
+import { connectDb, disconnectDb } from '../server/utils/db'
 import { EntryModel } from '../server/models/Entry'
 import { UserModel } from '../server/models/User'
 import list from '../server/api/entries/index.get'
@@ -49,7 +49,7 @@ beforeEach(async () => {
 
 afterAll(async () => {
   if (mongoose.connection.name === TEST_DB) await mongoose.connection.dropDatabase()
-  await mongoose.disconnect()
+  await disconnectDb()
 })
 
 describe('GET /api/entries', () => {

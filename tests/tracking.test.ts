@@ -5,6 +5,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import { connectDb, disconnectDb } from '../server/utils/db'
 import { EntryModel } from '../server/models/Entry'
 import { ScheduleModel } from '../server/models/Schedule'
+import { franklinDefaults } from '../server/utils/schedule'
 import { UserModel } from '../server/models/User'
 import putBlock from '../server/api/entries/[date]/blocks/[blockId].put'
 import insights from '../server/api/insights.get'
@@ -72,6 +73,7 @@ describe('block status API', () => {
   })
 
   it('snapshots the block, replaces, and clears', async () => {
+    await ScheduleModel.create({ user: userA, blocks: franklinDefaults() })
     let res = await setStatus('2026-01-01', 'work-am', 'done')
     expect((await res.json()).blockStatuses).toEqual([
       { blockId: 'work-am', label: 'Work', start: '08:00', end: '12:00', status: 'done', productive: true },
@@ -85,6 +87,7 @@ describe('block status API', () => {
   })
 
   it('keeps history when the schedule is edited later', async () => {
+    await ScheduleModel.create({ user: userA, blocks: franklinDefaults() })
     await setStatus('2026-01-01', 'work-am', 'done')
     await ScheduleModel.updateOne(
       { user: userA, 'blocks.id': 'work-am' },
@@ -139,6 +142,7 @@ describe('block status API', () => {
   })
 
   it('does not lose concurrent check-offs or create duplicates', async () => {
+    await ScheduleModel.create({ user: userA, blocks: franklinDefaults() })
     const ids = ['rise-plan', 'work-am', 'read-eat', 'work-pm', 'review', 'sleep']
     await Promise.all(ids.map(id => setStatus('2026-01-01', id, 'done')))
     await Promise.all(ids.map(id => setStatus('2026-01-01', id, 'done')))
