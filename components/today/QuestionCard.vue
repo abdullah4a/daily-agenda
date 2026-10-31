@@ -20,7 +20,6 @@ const nearLimit = computed(() => model.value.length > props.maxlength * 0.9)
     :class="active ? 'outline outline-2 -outline-offset-1 outline-accent' : ''"
     :aria-labelledby="`q-${uid}`"
   >
-    <div v-if="active" class="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-accent/25 blur-3xl" aria-hidden="true" />
     <header class="relative flex items-center justify-between gap-3">
       <p class="text-xs font-semibold uppercase tracking-[0.14em] text-muted">{{ eyebrow }}</p>
       <span

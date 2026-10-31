@@ -112,7 +112,6 @@ useHead({ title: 'Today · Daily Agenda' })
   <section class="space-y-8">
     <!-- Hero: date, live clock, day progress, save state -->
     <header class="glass-strong rise-in relative overflow-hidden rounded-glass p-5 sm:p-6">
-      <div class="pointer-events-none absolute -left-10 -top-20 h-56 w-56 rounded-full bg-accent/20 blur-3xl" aria-hidden="true" />
       <div class="relative flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
         <div class="min-w-0">
           <p class="text-xs font-semibold uppercase tracking-[0.14em] text-muted">Today</p>

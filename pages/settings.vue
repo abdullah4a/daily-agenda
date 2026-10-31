@@ -271,16 +271,6 @@ const slots = [
 </template>
 
 <style scoped>
-.settings-hero::before {
-  content: '';
-  position: absolute;
-  inset: -40% -20% auto auto;
-  width: 18rem;
-  height: 18rem;
-  background: radial-gradient(closest-side, rgb(var(--accent) / 0.28), transparent);
-  filter: blur(24px);
-  pointer-events: none;
-}
 .switch {
   position: relative;
   height: 2rem;

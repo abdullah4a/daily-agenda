@@ -63,7 +63,7 @@ onBeforeUnmount(() => clearInterval(timer))
     </button>
 
     <div v-if="now !== null" class="pointer-events-none absolute inset-x-0 z-10 flex items-center" :style="{ top: `${(now / 60) * HOUR_PX}px` }" aria-hidden="true">
-      <span class="-ml-1 h-2.5 w-2.5 rounded-full bg-danger shadow-[0_0_12px_rgb(var(--danger))]" />
+      <span class="-ml-1 h-2.5 w-2.5 rounded-full bg-danger" />
       <span class="h-px flex-1 bg-danger/70" />
     </div>
   </div>
@@ -77,9 +77,9 @@ onBeforeUnmount(() => clearInterval(timer))
 }
 .tl-rest { background: rgb(var(--glass) / 0.78); box-shadow: var(--shadow); }
 .tl-productive {
-  background: linear-gradient(135deg, rgb(var(--accent) / 0.34), rgb(var(--accent) / 0.12));
+  background: rgb(var(--accent) / 0.2);
   border-color: rgb(var(--accent) / 0.55);
-  box-shadow: 0 8px 28px rgb(var(--accent) / 0.22), 0 1px 0 rgb(255 255 255 / 0.18) inset;
+  box-shadow: var(--shadow);
 }
 .tl-flagged { outline: 2px solid rgb(var(--danger)); outline-offset: 1px; }
 </style>
