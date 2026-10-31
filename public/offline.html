@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Offline - Daily Agenda</title>
+<style>
+  :root { --bg: #f1f5f9; --ink: #0f172a; --muted: #334155; --card: rgba(255,255,255,.8); --accent: #4f46e5; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #080b16; --ink: #f1f5f9; --muted: #cbd5e1; --card: rgba(30,35,60,.7); --accent: #818cf8; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100dvh; display: grid; place-items: center; padding: 1rem; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 26rem; padding: 2rem; border-radius: 1.25rem; background: var(--card); border: 1px solid rgba(128,128,160,.25); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); text-align: center; }
+  h1 { margin: 0 0 .5rem; font-size: 1.4rem; }
+  p { margin: 0 0 1.25rem; color: var(--muted); }
+  button { font: inherit; font-weight: 600; padding: .65rem 1.4rem; border: 0; border-radius: .8rem; background: var(--accent); color: #fff; cursor: pointer; }
+  button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>You are offline</h1>
+  <p>Daily Agenda cannot reach the network, and this page is not saved on your device yet. Open Today once while online and it will be available offline next time.</p>
+  <button type="button" onclick="location.reload()">Try again</button>
+</main>
+</body>
+</html>

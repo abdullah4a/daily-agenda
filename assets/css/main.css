@@ -1,0 +1,185 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---------- Design tokens (RGB triplets so Tailwind alpha works) ---------- */
+:root {
+  color-scheme: light;
+  --ink: 15 23 42;            /* slate-900 */
+  --muted: 51 65 85;          /* slate-700, >=7:1 on glass */
+  --accent: 79 70 229;        /* indigo-600, white text 6.3:1 */
+  --accent-ink: 255 255 255;
+  --danger: 185 28 28;        /* red-700 */
+  --success: 21 128 61;       /* green-700 */
+
+  --bg-a: 224 231 255;
+  --bg-b: 252 231 243;
+  --bg-c: 204 251 241;
+  --bg-base: 241 245 249;
+
+  --glass: 255 255 255;
+  --glass-alpha: 0.72;
+  --glass-strong-alpha: 0.86;
+  --glass-solid: 255 255 255;
+  --glass-border: 255 255 255 / 0.65;
+  --hairline: 15 23 42 / 0.14;
+
+  --blur: 20px;
+  --radius: 1.25rem;
+  --shadow: 0 8px 32px rgb(31 38 135 / 0.12), 0 1px 0 rgb(255 255 255 / 0.6) inset;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --ink: 241 245 249;
+  --muted: 203 213 225;
+  --accent: 129 140 248;
+  --accent-ink: 11 16 32;
+  --danger: 252 165 165;
+  --success: 134 239 172;
+  --bg-a: 49 46 129;
+  --bg-b: 88 28 135;
+  --bg-c: 15 118 110;
+  --bg-base: 8 11 22;
+  --glass: 15 23 42;
+  --glass-alpha: 0.62;
+  --glass-strong-alpha: 0.82;
+  --glass-solid: 15 23 42;
+  --glass-border: 255 255 255 / 0.12;
+  --hairline: 255 255 255 / 0.2;
+  --shadow: 0 8px 32px rgb(0 0 0 / 0.45), 0 1px 0 rgb(255 255 255 / 0.08) inset;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --ink: 241 245 249;
+    --muted: 203 213 225;
+    --accent: 129 140 248;
+    --accent-ink: 11 16 32;
+    --danger: 252 165 165;
+    --success: 134 239 172;
+    --bg-a: 49 46 129;
+    --bg-b: 88 28 135;
+    --bg-c: 15 118 110;
+    --bg-base: 8 11 22;
+    --glass: 15 23 42;
+    --glass-alpha: 0.62;
+    --glass-strong-alpha: 0.82;
+    --glass-solid: 15 23 42;
+    --glass-border: 255 255 255 / 0.12;
+    --hairline: 255 255 255 / 0.2;
+    --shadow: 0 8px 32px rgb(0 0 0 / 0.45), 0 1px 0 rgb(255 255 255 / 0.08) inset;
+  }
+}
+
+/* Lighter blur on phones: cheaper to composite. */
+@media (max-width: 767px) {
+  :root { --blur: 14px; }
+}
+
+@layer base {
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    @apply font-sans text-ink antialiased;
+    background: rgb(var(--bg-base));
+    min-height: 100dvh;
+    letter-spacing: -0.005em;
+  }
+  h1, h2, h3 { letter-spacing: -0.02em; @apply font-semibold; }
+  :focus-visible {
+    outline: 3px solid rgb(var(--accent));
+    outline-offset: 2px;
+    border-radius: 0.5rem;
+  }
+}
+
+/* ---------- Animated gradient backdrop ---------- */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background: rgb(var(--bg-base));
+  pointer-events: none;
+}
+.backdrop::before,
+.backdrop::after,
+.backdrop > span {
+  content: '';
+  position: absolute;
+  width: 70vmax;
+  height: 70vmax;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.9;
+  will-change: transform; /* animate transform only: compositor-friendly */
+}
+.backdrop::before { background: rgb(var(--bg-a)); top: -25vmax; left: -20vmax; animation: drift-a 28s ease-in-out infinite alternate; }
+.backdrop::after { background: rgb(var(--bg-b)); bottom: -30vmax; right: -25vmax; animation: drift-b 34s ease-in-out infinite alternate; }
+.backdrop > span { background: rgb(var(--bg-c)); top: 30%; left: 35%; width: 45vmax; height: 45vmax; opacity: 0.6; animation: drift-c 40s ease-in-out infinite alternate; }
+
+@keyframes drift-a { to { transform: translate3d(18vmax, 12vmax, 0) scale(1.1); } }
+@keyframes drift-b { to { transform: translate3d(-16vmax, -14vmax, 0) scale(1.15); } }
+@keyframes drift-c { to { transform: translate3d(-12vmax, 10vmax, 0) scale(0.9); } }
+
+/* ---------- Glass surfaces ---------- */
+.glass,
+.glass-strong {
+  background: rgb(var(--glass) / var(--glass-alpha));
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(160%);
+  backdrop-filter: blur(var(--blur)) saturate(160%);
+  border: 1px solid rgb(var(--glass-border));
+  box-shadow: var(--shadow);
+}
+.glass-strong { background: rgb(var(--glass) / var(--glass-strong-alpha)); }
+
+/* Solid fallback: no backdrop-filter support, or user asked for less transparency. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass, .glass-strong { background: rgb(var(--glass-solid)); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .glass, .glass-strong { background: rgb(var(--glass-solid)); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .backdrop::before, .backdrop::after, .backdrop > span { opacity: 0.5; }
+}
+
+/* Banners that sit straight on the page: no tint on a backdrop that may not be blurred. */
+.alert-banner {
+  background: rgb(var(--danger) / 0.1);
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .alert-banner { background: rgb(var(--glass-solid)); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .alert-banner { background: rgb(var(--glass-solid)); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+
+/* Room for the bottom dock (--dock-room is measured by BottomDock). */
+.auth-main { padding-bottom: calc(5.5rem + env(safe-area-inset-bottom) + var(--dock-room, 0px)); }
+.dock-room { padding-bottom: calc(10rem + env(safe-area-inset-bottom) + var(--dock-room, 0px)); }
+@media (min-width: 768px) {
+  .dock-room { padding-bottom: calc(3rem + var(--dock-room, 0px)); }
+}
+
+/* ---------- Motion ---------- */
+.rise-in { animation: rise-in 0.55s var(--ease) both; }
+@keyframes rise-in { from { opacity: 0; transform: translate3d(0, 12px, 0) scale(0.98); } }
+@keyframes sheet-in { from { transform: translate3d(0, 100%, 0); } }
+@keyframes pop-in { from { opacity: 0; transform: scale(0.96); } }
+@keyframes fade-in { from { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.sr-only-focusable:not(:focus):not(:focus-within) {
+  @apply sr-only;
+}
