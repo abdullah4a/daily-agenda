@@ -8,7 +8,7 @@ export default defineConfig({
     maxWorkers: 4,
     // Remote MongoDB calls can stall for seconds. A test that times out is abandoned with its requests
     // still running, and they then fail against the closed client, so these must outlast a slow call.
-    testTimeout: 60_000,
+    testTimeout: 180_000,
     hookTimeout: 60_000,
     teardownTimeout: 60_000,
     env: { MONGODB_SELECTION_TIMEOUT_MS: '30000' },

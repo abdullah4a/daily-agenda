@@ -173,27 +173,27 @@ describe('POST login', () => {
       expect(blocked.status).toBe(429)
       expect(Number(blocked.headers.get('retry-after'))).toBeGreaterThan(0)
     }
-  }, 120_000)
+  }, 180_000)
 
   it('does not let one address lock the owner out from another', async () => {
     await send('/signup', credentials())
     for (let attempt = 0; attempt < 11; attempt++) await send('/login', { ...credentials(), password: 'wrong' })
     expect((await send('/login', credentials(), '10.9.9.9')).status).toBe(200)
-  }, 120_000)
+  }, 180_000)
 
   it('caps one email across many addresses', async () => {
     for (let attempt = 0; attempt < 50; attempt++) {
       await send('/login', { email: 'ann@example.com', password: 'wrong' }, `10.1.${attempt}.1`)
     }
     expect((await send('/login', { email: 'ann@example.com', password: 'wrong' }, '10.2.0.1')).status).toBe(429)
-  }, 120_000)
+  }, 180_000)
 
   it('limits attempts per address across emails', async () => {
     for (let attempt = 0; attempt < 30; attempt++) {
       await send('/login', { email: `u${attempt}@example.com`, password: 'wrong' })
     }
     expect((await send('/login', credentials())).status).toBe(429)
-  }, 120_000)
+  }, 180_000)
 })
 
 describe('signup timezone', () => {
@@ -239,7 +239,7 @@ describe('signup rate limit', () => {
       expect((await send('/signup', credentials(`u${attempt}@example.com`))).status).toBe(201)
     }
     expect((await send('/signup', credentials('u11@example.com'))).status).toBe(429)
-  }, 120_000)
+  }, 180_000)
 })
 
 describe('consumeRateLimit', () => {

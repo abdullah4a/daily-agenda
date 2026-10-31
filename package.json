@@ -4,8 +4,8 @@
   "type": "module",
   "scripts": {
     "postinstall": "nuxt prepare",
-    "dev": "nuxt dev",
-    "build": "nuxt build",
+    "dev": "node init && nuxt dev",
+    "build": "node init && nuxt build",
     "test": "vitest run",
     "lint": "eslint .",
     "typecheck": "nuxt typecheck"

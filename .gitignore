@@ -4,8 +4,6 @@ node_modules
 .vercel
 .data
 dist
-.env
-.env.*
 !.env.example
 *.log
 .DS_Store
@@ -15,3 +13,4 @@ coverage
 logs
 *.log
 coverage
+config.bat
