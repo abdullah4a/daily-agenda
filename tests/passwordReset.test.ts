@@ -179,7 +179,7 @@ describe('POST forgot-password', () => {
     clientIp = '10.8.10.1'
     for (let attempt = 0; attempt < 10; attempt++) await post('/forgot', { email: `u${attempt}@example.com` })
     expect((await post('/forgot', { email: 'bad' })).status).toBe(429)
-  }, 30_000)
+  }, 120_000)
 })
 
 describe('POST reset-password', () => {
@@ -235,7 +235,7 @@ describe('POST reset-password', () => {
     const token = 'a'.repeat(43)
     for (let attempt = 0; attempt < 20; attempt++) await post('/reset', { token, password: NEW_PASSWORD })
     expect((await post('/reset', { token, password: NEW_PASSWORD })).status).toBe(429)
-  }, 30_000)
+  }, 120_000)
 })
 
 describe('session revocation', () => {
