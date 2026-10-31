@@ -6,14 +6,14 @@
 <meta name="color-scheme" content="light dark">
 <title>Offline - Daily Agenda</title>
 <style>
-  :root { --bg: #f1f5f9; --ink: #0f172a; --muted: #334155; --card: rgba(255,255,255,.8); --accent: #4f46e5; }
-  @media (prefers-color-scheme: dark) { :root { --bg: #080b16; --ink: #f1f5f9; --muted: #cbd5e1; --card: rgba(30,35,60,.7); --accent: #818cf8; } }
+  :root { --bg: #ecedf0; --ink: #18191f; --muted: #42444f; --card: rgba(255,255,255,.8); --accent: #4d509e; }
+  @media (prefers-color-scheme: dark) { :root { --btn-ink: #0e0e14; --bg: #0a0a0c; --ink: #ecedf1; --muted: #bec0ca; --card: rgba(24,24,29,.7); --accent: #9ca2e0; } }
   * { box-sizing: border-box; }
   body { margin: 0; min-height: 100dvh; display: grid; place-items: center; padding: 1rem; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
   main { max-width: 26rem; padding: 2rem; border-radius: 1.25rem; background: var(--card); border: 1px solid rgba(128,128,160,.25); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); text-align: center; }
   h1 { margin: 0 0 .5rem; font-size: 1.4rem; }
   p { margin: 0 0 1.25rem; color: var(--muted); }
-  button { font: inherit; font-weight: 600; padding: .65rem 1.4rem; border: 0; border-radius: .8rem; background: var(--accent); color: #fff; cursor: pointer; }
+  button { font: inherit; font-weight: 600; padding: .65rem 1.4rem; border: 0; border-radius: .8rem; background: var(--accent); color: var(--btn-ink, #fff); cursor: pointer; }
   button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 </style>
 </head>

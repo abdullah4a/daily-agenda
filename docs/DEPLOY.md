@@ -122,4 +122,5 @@ The per-email login limit counts across all addresses, so a wide enough attack c
 - Sessions reset after every deploy: `NUXT_SESSION_PASSWORD` is missing or differs between builds.
 - `MONGODB_URI is not set`, or timeouts after 5 seconds: the variable is missing in that environment, or Atlas Network Access blocks Vercel.
 - No reset email arrives: `APP_BASE_URL` or SMTP is unset; see the function logs.
+- Enable reminders shows an error: the message names the step that failed. Service worker: check `/sw.js` loads and installs in DevTools, Application. Push key: check `VAPID_PUBLIC_KEY` is set, 65 bytes in URL-safe base64. Push service: the browser cannot reach its push service, as with a blocked network, or Brave with Google push turned off.
 - Reminders never arrive: the cron is not calling the endpoint (check the scheduler's history), the response is not `200`, or the browser has not granted notification permission.

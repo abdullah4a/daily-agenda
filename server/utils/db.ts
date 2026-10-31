@@ -24,7 +24,7 @@ export async function connectDb(options: ConnectDbOptions = {}): Promise<typeof 
     dbName: options.dbName,
     bufferCommands: false,
     maxPoolSize: 5,
-    serverSelectionTimeoutMS: 5000,
+    serverSelectionTimeoutMS: Number(process.env.MONGODB_SELECTION_TIMEOUT_MS) || 5000,
   })
 
   try {

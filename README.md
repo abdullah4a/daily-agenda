@@ -95,6 +95,12 @@ PORT=3000 node --env-file=.env .output/server/index.mjs
 
 Use the default preset (plain `npm run build`) for Vercel output.
 
+## First run
+
+New accounts start with an empty schedule. Today and Schedule offer "Add your first block" or "Use Franklin's daily template", which saves Benjamin Franklin's routine as the user's schedule. Existing accounts keep what they have stored.
+
+Answers on Today save as you type, and Save collapses a field into a read view. Schedule changes save as soon as a block is added, edited or removed.
+
 ## Reminders
 
 Push reminders are sent by `GET` or `POST /api/cron/reminders`, which must be called every 5 minutes with `Authorization: Bearer $CRON_SECRET`. See [docs/DEPLOY.md](docs/DEPLOY.md).

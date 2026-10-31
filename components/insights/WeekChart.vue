@@ -43,7 +43,7 @@ const summary = computed(() => props.days
               class="mb-1 text-center text-[0.7rem] font-semibold tabular-nums sm:text-xs"
             >{{ formatHours(d.productiveMinutes) }}</span>
             <div
-              class="bar-grow w-full rounded-t-xl bg-gradient-to-t from-accent/60 to-accent"
+              class="bar-grow w-full rounded-t-xl bg-accent"
               :class="[
                 d.date === today ? 'outline outline-2 -outline-offset-1 outline-ink/50' : '',
                 d.productiveMinutes === 0 ? 'opacity-30' : '',

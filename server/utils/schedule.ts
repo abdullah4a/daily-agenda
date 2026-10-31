@@ -8,7 +8,7 @@ export const MAX_ID_LENGTH = 64
 const MINUTES_PER_DAY = 24 * 60
 
 /**
- * Benjamin Franklin's daily schedule. The sleep block runs overnight (22:00 to 05:00);
+ * Benjamin Franklin's daily schedule, an optional template nothing applies by itself. The sleep block runs overnight (22:00 to 05:00);
  * the Schedule model stores start/end as plain strings, so it needs no special support.
  */
 export function franklinDefaults(): ScheduleBlock[] {
@@ -76,7 +76,7 @@ export function validateBlocks(input: unknown): ValidationResult {
     const block: ScheduleBlock = { id, label: cleanLabel, start, end, productive: productive ?? false }
     if (isOvernight(block)) {
       overnight++
-      if (overnight > 1) return fail('Only one overnight block is allowed')
+      if (overnight > 1) return fail('Only one block can run past midnight')
     }
     blocks.push(block)
   }
@@ -87,29 +87,15 @@ export function validateBlocks(input: unknown): ValidationResult {
     if (spans[i]!.s < spans[i - 1]!.e) {
       const a = blocks[spans[i - 1]!.index]!
       const b = blocks[spans[i]!.index]!
-      return fail(`Blocks "${a.id}" and "${b.id}" overlap`)
+      return fail(`"${b.label}" (${b.start}-${b.end}) clashes with "${a.label}" (${a.start}-${a.end})`)
     }
   }
 
   return { ok: true, blocks }
 }
 
-/**
- * Returns the user's blocks, seeding Franklin's defaults on first use. A single atomic
- * upsert with $setOnInsert means concurrent first requests cannot create duplicates; if two
- * upserts still collide on the unique user index, the loser re-reads the winner's document.
- */
-export async function getOrCreateSchedule(model: typeof ScheduleModel, userId: string): Promise<ScheduleBlock[]> {
-  const run = () => model.findOneAndUpdate(
-    { user: userId },
-    { $setOnInsert: { blocks: franklinDefaults() } },
-    { upsert: true, returnDocument: 'after' },
-  ).lean()
-  try {
-    return (await run())!.blocks
-  }
-  catch (error) {
-    if ((error as { code?: number }).code !== 11000) throw error
-    return (await run())!.blocks
-  }
+/** The user's stored blocks. New accounts have none: nothing is created until they save. */
+export async function findScheduleBlocks(model: typeof ScheduleModel, userId: string): Promise<ScheduleBlock[]> {
+  const schedule = await model.findOne({ user: userId }, { blocks: 1 }).lean()
+  return schedule?.blocks ?? []
 }

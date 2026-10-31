@@ -18,6 +18,8 @@ export const useSyncStore = defineStore('sync', () => {
   /** Bumps whenever items leave the queue, so a read that began earlier can be discarded. */
   const epoch = ref(0)
   const pending = computed(() => ops.value.length)
+  /** Answers the server refused for good, by queue key, so a field never claims to be saved. */
+  const rejected = ref<Record<string, string>>({})
 
   let queue: SyncQueue | null = null
   let generation = 0
@@ -86,6 +88,10 @@ export const useSyncStore = defineStore('sync', () => {
     if (!queue) return false
     const stored = queue.put(change)
     refreshOps()
+    if (change.kind === 'answer') {
+      const key = Object.keys(rejected.value).find(k => k.endsWith(`:a:${change.date}:${change.field}`))
+      if (key) rejected.value = Object.fromEntries(Object.entries(rejected.value).filter(([k]) => k !== key))
+    }
     return stored
   }
 
@@ -146,6 +152,7 @@ export const useSyncStore = defineStore('sync', () => {
     const toast = useToast()
     for (const { op, error } of dropped) {
       const what = op.kind === 'answer' ? `Your ${op.field === 'morningAnswer' ? 'morning' : 'evening'} answer` : 'A block check-off'
+      if (op.kind === 'answer') rejected.value = { ...rejected.value, [op.key]: apiErrorMessage(error, 'The server rejected it') }
       toast.push(`${what} for ${op.date} could not be saved and was removed: ${apiErrorMessage(error, 'the server rejected it')}.`, 'error', 0)
     }
   }
@@ -243,5 +250,5 @@ export const useSyncStore = defineStore('sync', () => {
     void trigger()
   }
 
-  return { userId, ops, status, online, pending, lastSyncedAt, epoch, start, stop, discardFor, discardOp, enqueue, releaseHeld, trigger, onReconcile, onStorage, setOnline }
+  return { userId, ops, rejected, status, online, pending, lastSyncedAt, epoch, start, stop, discardFor, discardOp, enqueue, releaseHeld, trigger, onReconcile, onStorage, setOnline }
 })
