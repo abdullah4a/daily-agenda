@@ -62,6 +62,19 @@ async function useDeviceZone() {
   finally { zoneBusy.value = false }
 }
 
+const templateBusy = ref(false)
+async function useTemplate() {
+  templateBusy.value = true
+  try {
+    await today.applyTemplate()
+    toast.success('Franklin\'s daily template added.')
+  }
+  catch (e) {
+    toast.error(apiErrorMessage(e, 'Could not add the template.'))
+  }
+  finally { templateBusy.value = false }
+}
+
 let timer: ReturnType<typeof setInterval> | null = null
 function startClock() {
   if (timer) return
@@ -161,23 +174,31 @@ useHead({ title: 'Today · Daily Agenda' })
     <div v-else class="rise-in grid gap-4 sm:grid-cols-2">
       <TodayQuestionCard
         :model-value="today.drafts.morningAnswer"
+        :status="today.fieldStatus('morningAnswer')"
         eyebrow="Morning"
         question="What good shall I do this day?"
         placeholder="Set your intention for today…"
         :active="period === 'morning'"
         :maxlength="MAX_ANSWER"
         @update:model-value="today.setDraft('morningAnswer', $event)"
+        @save="today.flush()"
+        @retry="today.flush()"
+        @reauth="signInAgain"
         @focus="today.startEditing('morningAnswer')"
         @blur="today.stopEditing()"
       />
       <TodayQuestionCard
         :model-value="today.drafts.eveningAnswer"
+        :status="today.fieldStatus('eveningAnswer')"
         eyebrow="Evening"
         question="What good have I done today?"
         placeholder="Reflect on how the day went…"
         :active="period === 'evening'"
         :maxlength="MAX_ANSWER"
         @update:model-value="today.setDraft('eveningAnswer', $event)"
+        @save="today.flush()"
+        @retry="today.flush()"
+        @reauth="signInAgain"
         @focus="today.startEditing('eveningAnswer')"
         @blur="today.stopEditing()"
       />
@@ -188,7 +209,10 @@ useHead({ title: 'Today · Daily Agenda' })
       :error="today.scheduleError"
       :blocks="today.blocks"
       :minutes="now?.minutes ?? null"
+      :can-use-template="!today.offlineCopy"
+      :template-busy="templateBusy"
       @retry="today.loadSchedule()"
+      @template="useTemplate"
     >
       <template #block-actions="{ block, status }">
         <TodayBlockChecks
