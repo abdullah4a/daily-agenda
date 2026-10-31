@@ -2,7 +2,7 @@ import { createError, defineEventHandler, getRouterParam, readBody } from 'h3'
 import { ScheduleModel } from '../../../../models/Schedule'
 import { connectDb } from '../../../../utils/db'
 import { parseDateParam } from '../../../../utils/entries'
-import { getOrCreateSchedule } from '../../../../utils/schedule'
+import { findScheduleBlocks } from '../../../../utils/schedule'
 import { getBlockStatuses, parseBlockId, parseBlockSnapshot, parseStatusBody, setBlockStatus, snapshotBlock } from '../../../../utils/tracking'
 import { requireUser } from '../../../../utils/requireUser'
 
@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
   }
   else {
     // A queued check-off carries its block: the schedule may have changed since it was made.
-    const blocks = supplied ? [] : await getOrCreateSchedule(ScheduleModel, userId)
+    const blocks = supplied ? [] : await findScheduleBlocks(ScheduleModel, userId)
     const block = supplied ? { ...supplied, id: blockId } : blocks.find(b => b.id === blockId)
     if (!block) throw createError({ statusCode: 404, statusMessage: 'Block not found in your schedule' })
     await setBlockStatus(userId, date, blockId, snapshotBlock(block, status))

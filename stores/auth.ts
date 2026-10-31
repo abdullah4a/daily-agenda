@@ -10,8 +10,8 @@ export interface AuthUser {
 
 /** Pulls a human-readable message out of a $fetch error. */
 export function apiErrorMessage(error: unknown, fallback = 'Something went wrong. Please try again.'): string {
-  const e = error as { data?: { statusMessage?: string, message?: string }, statusMessage?: string }
-  return e?.data?.statusMessage || e?.data?.message || e?.statusMessage || fallback
+  const e = error as { data?: { data?: { message?: string }, statusMessage?: string, message?: string }, statusMessage?: string }
+  return e?.data?.data?.message || e?.data?.statusMessage || e?.data?.message || e?.statusMessage || fallback
 }
 
 export const OFFLINE_SIGN_OUT = 'You are offline. Connect to the internet to sign out.'

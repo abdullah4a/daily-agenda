@@ -6,6 +6,7 @@ import { connectDb, disconnectDb } from '../server/utils/db'
 import { ScheduleModel } from '../server/models/Schedule'
 import { UserModel } from '../server/models/User'
 import { franklinDefaults, validateBlocks } from '../server/utils/schedule'
+import { blockConflicts, franklinDefaultBlocks } from '../utils/schedule'
 import getSchedule from '../server/api/schedule/index.get'
 import putSchedule from '../server/api/schedule/index.put'
 
@@ -52,9 +53,15 @@ afterAll(async () => {
   await disconnectDb()
 })
 
-describe('defaults', () => {
-  it('pass their own validation', () => {
+describe('Franklin template', () => {
+  it('passes validation and matches the copy the browser sends', () => {
     expect(validateBlocks(franklinDefaults()).ok).toBe(true)
+    expect(franklinDefaultBlocks()).toEqual(franklinDefaults())
+  })
+
+  it('finds the block a new one clashes with', () => {
+    const [problem] = blockConflicts({ id: 'n', label: 'Gym', start: '11:00', end: '13:00', productive: false }, franklinDefaultBlocks())
+    expect(problem).toContain('"Work" (8:00 AM to 12:00 PM)')
   })
 })
 
@@ -63,27 +70,23 @@ describe('GET /schedule', () => {
     expect((await get()).status).toBe(401)
   })
 
-  it('seeds Franklin defaults with productive work', async () => {
-    await signIn()
-    const { blocks } = await (await get()).json()
-    expect(blocks).toHaveLength(6)
-    const productive = blocks.filter((x: { productive: boolean }) => x.productive)
-    expect(productive.map((x: { label: string }) => x.label)).toEqual(['Work', 'Work'])
-    expect(blocks.at(-1)).toMatchObject({ start: '22:00', end: '05:00' })
+  it('starts empty and stores nothing for a new account', async () => {
+    const id = await signIn()
+    expect((await (await get()).json()).blocks).toEqual([])
+    expect(await ScheduleModel.countDocuments({ user: id })).toBe(0)
   })
 
-  it('does not duplicate under concurrent first use', async () => {
+  it('keeps a schedule an account already has', async () => {
     const id = await signIn()
-    const responses = await Promise.all(Array.from({ length: 10 }, () => get()))
-    expect(responses.every(r => r.status === 200)).toBe(true)
-    expect(await ScheduleModel.countDocuments({ user: id })).toBe(1)
+    await ScheduleModel.create({ user: id, blocks: franklinDefaults() })
+    expect((await (await get()).json()).blocks).toHaveLength(6)
   })
 
   it('is scoped to the user', async () => {
     await signIn()
     await put({ blocks: [b('a', '09:00', '10:00')] })
     await signIn()
-    expect((await (await get()).json()).blocks).toHaveLength(6)
+    expect((await (await get()).json()).blocks).toEqual([])
   })
 })
 
@@ -101,10 +104,20 @@ describe('PUT /schedule', () => {
 
   it('returns 400 for invalid payloads and leaves data intact', async () => {
     await signIn()
-    await get()
+    await put({ blocks: [b('a', '09:00', '10:00')] })
     expect((await put({ blocks: 'x' })).status).toBe(400)
     expect((await put({})).status).toBe(400)
-    expect((await (await get()).json()).blocks).toHaveLength(6)
+    expect((await (await get()).json()).blocks).toHaveLength(1)
+  })
+
+  it('names the blocks that clash', async () => {
+    await signIn()
+    const res = await put({ blocks: [b('a', '09:00', '11:00', { label: 'Gym' }), b('b', '10:00', '12:00', { label: 'Lunch' })] })
+    expect(res.status).toBe(400)
+    const text = await res.text()
+    expect(text).toContain('Lunch')
+    expect(text).toContain('clashes with')
+    expect(text).toContain('Gym')
   })
 })
 

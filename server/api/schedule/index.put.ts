@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
   await connectDb()
   const body = await readBody<{ blocks?: unknown } | null>(event)
   const result = validateBlocks(body?.blocks)
-  if (!result.ok) throw createError({ statusCode: 400, statusMessage: result.message })
+  if (!result.ok) throw createError({ statusCode: 400, statusMessage: 'Invalid schedule', data: { message: result.message } })
 
   const schedule = await ScheduleModel.findOneAndUpdate(
     { user: userId },
