@@ -1,5 +1,5 @@
 // Dependency-free PNG icon generator: node scripts/generate-icons.mjs
-// Draws an indigo gradient tile with a calendar glyph. "maskable" fills the whole canvas.
+// Draws a flat muted indigo tile with a calendar glyph. "maskable" fills the whole canvas.
 import { deflateSync } from 'node:zlib'
 import { mkdirSync, writeFileSync } from 'node:fs'
 
@@ -51,8 +51,7 @@ function icon(size, maskable) {
       a = Math.round(255 * Math.min(1, Math.max(0, 0.5 - d)))
     }
     if (a === 0) return [0, 0, 0, 0]
-    const t = (u + v) / 2
-    let rgb = [79 + (139 - 79) * t, 70 + (92 - 70) * t, 229 + (246 - 229) * t]
+    let rgb = [77, 80, 158]
     // glyph scale: maskable keeps content inside the 80% safe zone
     const s = maskable ? 0.62 : 0.74
     const gx = (u - 0.5) / s + 0.5, gy = (v - 0.5) / s + 0.5
