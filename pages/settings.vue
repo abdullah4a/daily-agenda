@@ -88,10 +88,12 @@ function discard() {
 
 // ---------- Push on this device ----------
 const pushBusy = ref(false)
+const pushError = ref('')
 const pushOn = computed(() => support.value === 'supported' && permission.value === 'granted' && subscribed.value)
 
 async function togglePush() {
   pushBusy.value = true
+  pushError.value = ''
   try {
     if (pushOn.value) {
       await disablePush()
@@ -99,7 +101,7 @@ async function togglePush() {
       toast.info('Reminders are off on this device.')
       return
     }
-    const result = await Notification.requestPermission()
+    const result = await askNotificationPermission()
     permission.value = result
     if (result !== 'granted') {
       toast.error(result === 'denied' ? 'Notifications are blocked for this site.' : 'Notification permission was dismissed.')
@@ -110,7 +112,8 @@ async function togglePush() {
     toast.success('Reminders are on for this device.')
   }
   catch (e) {
-    toast.error(apiErrorMessage(e, 'Could not change notifications on this device.'))
+    // Kept on the page: these messages say what to do, and a toast would vanish first.
+    pushError.value = e instanceof PushSetupError ? e.message : apiErrorMessage(e, 'Could not change notifications on this device.')
   }
   finally { pushBusy.value = false }
 }
@@ -119,7 +122,7 @@ const testing = ref(false)
 async function sendTest() {
   testing.value = true
   try {
-    const reg = await navigator.serviceWorker.ready
+    const reg = await activeRegistration()
     await reg.showNotification('Daily Agenda', {
       body: 'Looks good. Your reminders will appear like this.',
       icon: '/icons/icon-192.png',
@@ -195,6 +198,7 @@ const slots = [
                 <span class="h-2 w-2 rounded-full bg-success" aria-hidden="true" /> Active
               </span>
             </div>
+            <p v-if="pushError" role="alert" class="mt-3 text-sm font-medium text-danger">{{ pushError }}</p>
           </div>
         </div>
       </GlassCard>
