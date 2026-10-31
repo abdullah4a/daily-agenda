@@ -11,7 +11,7 @@ const percent = computed(() => Math.round(props.progress * 100))
       <span
         class="z-10 h-3.5 w-3.5 rounded-full border-2 transition"
         :class="{
-          'border-accent bg-accent shadow-[0_0_0_6px_rgb(var(--accent)/0.25)]': status === 'current',
+          'border-accent bg-accent shadow-[0_0_0_5px_rgb(var(--accent)/0.18)]': status === 'current',
           'border-success bg-success': status === 'past',
           'border-muted bg-transparent': status === 'upcoming',
         }"

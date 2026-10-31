@@ -60,7 +60,6 @@ watch(start, () => void load())
 <template>
   <section class="space-y-6">
     <header class="glass-strong rise-in relative overflow-hidden rounded-glass p-5 sm:p-6">
-      <div class="pointer-events-none absolute -right-12 -top-24 h-64 w-64 rounded-full bg-accent/20 blur-3xl" aria-hidden="true" />
       <div class="relative flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
         <div class="min-w-0">
           <p class="text-xs font-semibold uppercase tracking-[0.14em] text-muted">Insights</p>

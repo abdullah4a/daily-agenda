@@ -11,8 +11,8 @@ export default defineNuxtConfig({
       meta: [
         { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
         { name: 'color-scheme', content: 'light dark' },
-        { key: 'theme-color-light', name: 'theme-color', media: '(prefers-color-scheme: light)', content: '#4f46e5' },
-        { key: 'theme-color-dark', name: 'theme-color', media: '(prefers-color-scheme: dark)', content: '#080b16' },
+        { key: 'theme-color-light', name: 'theme-color', media: '(prefers-color-scheme: light)', content: '#4d509e' },
+        { key: 'theme-color-dark', name: 'theme-color', media: '(prefers-color-scheme: dark)', content: '#0a0a0c' },
         { name: 'apple-mobile-web-app-capable', content: 'yes' },
         { name: 'apple-mobile-web-app-title', content: 'Daily Agenda' },
       ],
@@ -35,8 +35,8 @@ export default defineNuxtConfig({
       start_url: '/',
       scope: '/',
       display: 'standalone',
-      background_color: '#080b16',
-      theme_color: '#4f46e5',
+      background_color: '#0a0a0c',
+      theme_color: '#4d509e',
       icons: [
         { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
         { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },

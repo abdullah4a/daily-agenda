@@ -6,8 +6,11 @@ const props = defineProps<{
   error: string
   blocks: DayBlock[]
   minutes: number | null
+  /** False on an offline copy: it may only look empty, and the template would replace the real schedule. */
+  canUseTemplate: boolean
+  templateBusy: boolean
 }>()
-const emit = defineEmits<{ retry: [] }>()
+const emit = defineEmits<{ retry: [], template: [] }>()
 
 const rows = computed(() => sortBlocks(props.blocks).map(block => ({
   block,
@@ -31,9 +34,12 @@ const rows = computed(() => sortBlocks(props.blocks).map(block => ({
     </GlassCard>
 
     <GlassCard v-else-if="!blocks.length" class="text-center">
-      <p class="font-medium">No blocks scheduled</p>
-      <p class="mt-1 text-sm text-muted">Add blocks on the Schedule page to see your day take shape here.</p>
-      <AppButton class="mt-4" variant="glass" to="/schedule">Edit schedule</AppButton>
+      <p class="font-medium">Your day is a blank page</p>
+      <p class="mt-1 text-sm text-muted">Add what you plan to do, or start from Benjamin Franklin's routine.</p>
+      <div class="mt-4 flex flex-col justify-center gap-2 sm:flex-row">
+        <AppButton to="/schedule?add=1">Add your first block</AppButton>
+        <AppButton v-if="canUseTemplate" variant="glass" :loading="templateBusy" @click="emit('template')">Use Franklin's daily template</AppButton>
+      </div>
     </GlassCard>
 
     <ol v-else>

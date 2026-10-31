@@ -245,12 +245,17 @@ describe('sendDueReminders', () => {
     for (let i = 0; i < 6; i++) await device(user)
     let active = 0
     let peak = 0
+    // The first send waits for the second, as a fixed delay can end first when the database is slow.
+    let release = () => {}
+    const overlapped = new Promise<void>((resolve) => { release = resolve })
     sendNotification.mockImplementation(async () => {
       peak = Math.max(peak, ++active)
+      if (active >= 2) release()
+      await overlapped
       await new Promise(resolve => setTimeout(resolve, 10))
       active--
     })
-    expect((await sendDueReminders({ now: NOON_UTC, concurrency: 2 })).sent).toBe(6)
+    expect((await sendDueReminders({ now: NOON_UTC, concurrency: 2, budgetMs: 60_000 })).sent).toBe(6)
     expect(peak).toBe(2)
   })
 

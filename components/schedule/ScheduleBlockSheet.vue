@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { ScheduleBlockData } from '~/utils/schedule'
 
-const props = defineProps<{ block: ScheduleBlockData | null, isNew: boolean, others: ScheduleBlockData[] }>()
+const props = defineProps<{ block: ScheduleBlockData | null, isNew: boolean, others: ScheduleBlockData[], saving: boolean, error: string }>()
 const open = defineModel<boolean>({ default: false })
-const emit = defineEmits<{ apply: [block: ScheduleBlockData], remove: [id: string] }>()
+const emit = defineEmits<{ save: [block: ScheduleBlockData], remove: [id: string] }>()
 
 const draft = reactive<ScheduleBlockData>({ id: '', label: '', start: '09:00', end: '10:00', productive: false })
 const submitted = ref(false)
@@ -21,7 +21,7 @@ const fieldErrors = computed(() => (submitted.value ? checkBlockFields(draft) : 
 const scheduleIssues = computed(() => {
   const f = checkBlockFields(draft)
   if (f.label || f.start || f.end) return []
-  return checkSchedule([...props.others, { ...draft }]).general
+  return blockConflicts({ ...draft }, props.others)
 })
 const duration = computed(() => (isValidClock(draft.start) && isValidClock(draft.end) && draft.start !== draft.end
   ? scheduleDuration(blockDuration(draft)) + (blockIsOvernight(draft) ? ' · overnight' : '')
@@ -31,12 +31,10 @@ function submit() {
   submitted.value = true
   const f = checkBlockFields(draft)
   if (f.label || f.start || f.end || scheduleIssues.value.length) return
-  emit('apply', { ...draft, label: draft.label.trim() })
-  open.value = false
+  emit('save', { ...draft, label: draft.label.trim() })
 }
 function remove() {
   emit('remove', draft.id)
-  open.value = false
 }
 </script>
 
@@ -63,10 +61,12 @@ function remove() {
         <li v-for="issue in scheduleIssues" :key="issue">{{ issue }}</li>
       </ul>
 
+      <p v-if="error" role="alert" class="rounded-xl bg-danger/10 px-4 py-3 text-sm font-medium text-danger">{{ error }}</p>
+
       <div class="flex flex-col gap-2 pt-2 sm:flex-row-reverse">
-        <AppButton type="submit" block>{{ isNew ? 'Add block' : 'Apply' }}</AppButton>
+        <AppButton type="submit" block :loading="saving">{{ isNew ? 'Add block' : 'Save' }}</AppButton>
         <AppButton v-if="!isNew && !confirmRemove" variant="ghost" block @click="confirmRemove = true">Remove</AppButton>
-        <AppButton v-if="confirmRemove" variant="danger" block @click="remove">Yes, remove it</AppButton>
+        <AppButton v-if="confirmRemove" variant="danger" block :loading="saving" @click="remove">Yes, remove it</AppButton>
       </div>
     </form>
   </AppModal>

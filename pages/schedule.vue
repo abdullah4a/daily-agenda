@@ -6,106 +6,87 @@ useHead({ title: 'Schedule · Daily Agenda' })
 const toast = useToast()
 const { data, status, error, refresh } = useFetch<{ blocks: ScheduleBlockData[] }>('/api/schedule', { lazy: true, server: false })
 
-const clone = (b: ScheduleBlockData[]) => b.map(x => ({ ...x }))
+const route = useRoute()
+const router = useRouter()
 const blocks = ref<ScheduleBlockData[]>([])
-const saved = ref<ScheduleBlockData[]>([])
 watch(data, (d) => {
-  if (!d) return
-  saved.value = clone(d.blocks)
-  blocks.value = clone(d.blocks)
+  if (d) blocks.value = d.blocks.map(x => ({ ...x }))
 }, { immediate: true })
 
 const sorted = computed(() => [...blocks.value].sort((a, b) => timeToMinutes(a.start) - timeToMinutes(b.start)))
-const dirty = computed(() => JSON.stringify(blocks.value) !== JSON.stringify(saved.value))
-const issues = computed(() => checkSchedule(blocks.value))
-useSaveBar(dirty)
 const productiveMinutes = computed(() => blocks.value.filter(b => b.productive).reduce((s, b) => s + blockDuration(b), 0))
 const planned = computed(() => blocks.value.reduce((s, b) => s + blockDuration(b), 0))
 
-// Server validation error, shown until the next edit.
-const serverError = ref('')
-const serverIds = computed(() => new Set(
-  [...serverError.value.matchAll(/"([^"]+)"/g)].map(m => m[1]!).filter(id => blocks.value.some(b => b.id === id)),
-))
-const flagged = computed(() => new Set([...issues.value.blockIds, ...serverIds.value]))
-watch(blocks, () => { serverError.value = '' })
-
-// Editor sheet
+// Editor sheet. Every change is saved as it is made; a failure keeps the sheet open with the reason.
 const sheetOpen = ref(false)
 const editing = ref<ScheduleBlockData | null>(null)
 const editingIsNew = ref(false)
+const saving = ref(false)
+const sheetError = ref('')
 const others = computed(() => blocks.value.filter(b => b.id !== editing.value?.id))
 
+function openSheet(block: ScheduleBlockData, isNew: boolean) {
+  editing.value = block
+  editingIsNew.value = isNew
+  sheetError.value = ''
+  sheetOpen.value = true
+}
 function openEdit(id: string) {
   const b = blocks.value.find(x => x.id === id)
-  if (!b) return
-  editing.value = { ...b }
-  editingIsNew.value = false
-  sheetOpen.value = true
+  if (b) openSheet({ ...b }, false)
 }
 function openAdd() {
-  editing.value = { id: newBlockId(), label: '', productive: false, ...suggestNewBlock(blocks.value) }
-  editingIsNew.value = true
-  sheetOpen.value = true
-}
-function applyBlock(block: ScheduleBlockData) {
-  blocks.value = blocks.value.some(b => b.id === block.id)
-    ? blocks.value.map(b => (b.id === block.id ? block : b))
-    : [...blocks.value, block]
-}
-function removeBlock(id: string) {
-  blocks.value = blocks.value.filter(b => b.id !== id)
+  openSheet({ id: newBlockId(), label: '', productive: false, ...suggestNewBlock(blocks.value) }, true)
 }
 
-// Saving
-const saving = ref(false)
+// Today's "Add your first block" lands here.
+watch([data, () => route.query.add], ([d, add]) => {
+  if (!d || add === undefined) return
+  void router.replace({ query: {} })
+  openAdd()
+}, { immediate: true })
+
 async function put(next: ScheduleBlockData[]) {
   const res = await $fetch<{ blocks: ScheduleBlockData[] }>('/api/schedule', { method: 'PUT', body: { blocks: next } })
-  saved.value = clone(res.blocks)
-  blocks.value = clone(res.blocks)
+  blocks.value = res.blocks
 }
-async function save() {
-  if (issues.value.general.length) return
+async function saveFromSheet(next: ScheduleBlockData[], done: string) {
   saving.value = true
+  sheetError.value = ''
   try {
-    await put(blocks.value)
-    toast.success('Schedule saved.')
+    await put(next)
+    sheetOpen.value = false
+    toast.success(done)
   }
   catch (e) {
-    // Set after the blocks watcher has had no chance to clear it (blocks unchanged on failure).
-    serverError.value = apiErrorMessage(e, 'Could not save your schedule.')
+    sheetError.value = apiErrorMessage(e, 'Could not save. Check your connection and try again.')
   }
   finally { saving.value = false }
 }
-function discard() {
-  blocks.value = clone(saved.value)
+function saveBlock(block: ScheduleBlockData) {
+  const exists = blocks.value.some(b => b.id === block.id)
+  const next = exists ? blocks.value.map(b => (b.id === block.id ? block : b)) : [...blocks.value, block]
+  return saveFromSheet(next, exists ? `"${block.label}" saved.` : `"${block.label}" added to your schedule.`)
+}
+function removeBlock(id: string) {
+  return saveFromSheet(blocks.value.filter(b => b.id !== id), 'Block removed.')
 }
 
-// Reset to Franklin's defaults, saved immediately through PUT.
+// Franklin's template, saved immediately.
 const resetOpen = ref(false)
 const resetting = ref(false)
-async function resetDefaults() {
+async function useTemplate() {
   resetting.value = true
   try {
     await put(franklinDefaultBlocks())
     resetOpen.value = false
-    toast.success('Franklin\'s schedule restored.')
+    toast.success('Franklin\'s daily template added.')
   }
   catch (e) {
-    toast.error(apiErrorMessage(e, 'Could not reset your schedule.'))
+    toast.error(apiErrorMessage(e, 'Could not add the template.'))
   }
   finally { resetting.value = false }
 }
-
-// Unsaved-changes guards
-onBeforeRouteLeave(() => {
-  if (dirty.value && !window.confirm('You have unsaved schedule changes. Leave without saving?')) return false
-})
-function beforeUnload(e: BeforeUnloadEvent) {
-  if (dirty.value) { e.preventDefault(); e.returnValue = '' }
-}
-onMounted(() => window.addEventListener('beforeunload', beforeUnload))
-onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
 </script>
 
 <template>
@@ -116,7 +97,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
         <p class="mt-1 text-muted">Shape the day you want to live. Tap a block to edit it.</p>
       </div>
       <div class="flex gap-2">
-        <AppButton variant="glass" :disabled="!data" @click="resetOpen = true">Reset</AppButton>
+        <AppButton v-if="blocks.length" variant="glass" @click="resetOpen = true">Reset</AppButton>
         <AppButton :disabled="!data || blocks.length >= SCHEDULE_MAX_BLOCKS" @click="openAdd">
           <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
           Add block
@@ -138,66 +119,38 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
     </GlassCard>
 
     <template v-else>
-      <!-- Validation banner -->
-      <div v-if="serverError || issues.general.length" role="alert" class="alert-banner mt-6 rounded-glass border border-danger/40 px-5 py-4">
-        <p class="text-sm font-semibold text-danger">{{ serverError ? 'The server rejected this schedule' : 'Fix these before saving' }}</p>
-        <ul class="mt-1 list-inside list-disc space-y-0.5 text-sm text-danger">
-          <li v-if="serverError">{{ serverError }}</li>
-          <li v-for="g in issues.general" :key="g">{{ g }}</li>
-        </ul>
-      </div>
-
-      <!-- Summary -->
-      <div class="mt-6 grid grid-cols-3 gap-3">
-        <GlassCard class="!p-4"><p class="text-xs text-muted">Blocks</p><p class="text-2xl font-semibold tabular-nums">{{ blocks.length }}</p></GlassCard>
-        <GlassCard class="!p-4"><p class="text-xs text-muted">Productive</p><p class="text-2xl font-semibold tabular-nums text-accent">{{ scheduleDuration(productiveMinutes) }}</p></GlassCard>
-        <GlassCard class="!p-4"><p class="text-xs text-muted">Planned</p><p class="text-2xl font-semibold tabular-nums">{{ scheduleDuration(planned) }}</p></GlassCard>
-      </div>
-
       <!-- Empty -->
       <GlassCard v-if="!blocks.length" strong class="mt-6 py-12 text-center">
         <p class="text-xl font-semibold">Your day is a blank page</p>
-        <p class="mx-auto mt-2 max-w-sm text-muted">Add your first block, or start from Benjamin Franklin's famous routine.</p>
+        <p class="mx-auto mt-2 max-w-sm text-muted">Plan it your way, or start from Benjamin Franklin's routine and change anything you like.</p>
         <div class="mt-6 flex flex-col justify-center gap-2 sm:flex-row">
-          <AppButton @click="openAdd">Add a block</AppButton>
-          <AppButton variant="glass" @click="resetOpen = true">Use Franklin's schedule</AppButton>
+          <AppButton @click="openAdd">Add your first block</AppButton>
+          <AppButton variant="glass" :loading="resetting" @click="useTemplate">Use Franklin's daily template</AppButton>
         </div>
       </GlassCard>
 
-      <GlassCard v-else class="rise-in mt-6 !px-3 sm:!px-5">
-        <ScheduleTimeline :blocks="sorted" :flagged="flagged" @select="openEdit" />
-      </GlassCard>
+      <template v-else>
+        <div class="mt-6 grid grid-cols-3 gap-3">
+          <GlassCard class="!p-4"><p class="text-xs text-muted">Blocks</p><p class="text-2xl font-semibold tabular-nums">{{ blocks.length }}</p></GlassCard>
+          <GlassCard class="!p-4"><p class="text-xs text-muted">Productive</p><p class="text-2xl font-semibold tabular-nums text-accent">{{ scheduleDuration(productiveMinutes) }}</p></GlassCard>
+          <GlassCard class="!p-4"><p class="text-xs text-muted">Planned</p><p class="text-2xl font-semibold tabular-nums">{{ scheduleDuration(planned) }}</p></GlassCard>
+        </div>
+        <GlassCard class="rise-in mt-6 !px-3 sm:!px-5">
+          <ScheduleTimeline :blocks="sorted" @select="openEdit" />
+        </GlassCard>
+      </template>
     </template>
 
-    <!-- Unsaved-changes bar, above the mobile nav -->
-    <Transition name="bar">
-      <div v-if="dirty" class="fixed inset-x-3 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 mx-auto max-w-xl md:bottom-6 md:left-72">
-        <div class="glass-strong flex items-center justify-between gap-3 rounded-[1.5rem] p-3 pl-5">
-          <p class="text-sm font-semibold" role="status">Unsaved changes</p>
-          <div class="flex gap-2">
-            <AppButton variant="ghost" :disabled="saving" @click="discard">Discard</AppButton>
-            <AppButton :loading="saving" :disabled="issues.general.length > 0" @click="save">Save</AppButton>
-          </div>
-        </div>
-      </div>
-    </Transition>
-
-    <ScheduleBlockSheet v-model="sheetOpen" :block="editing" :is-new="editingIsNew" :others="others" @apply="applyBlock" @remove="removeBlock" />
+    <ScheduleBlockSheet v-model="sheetOpen" :block="editing" :is-new="editingIsNew" :others="others" :saving="saving" :error="sheetError" @save="saveBlock" @remove="removeBlock" />
 
     <AppModal v-model="resetOpen" title="Reset to Franklin's schedule?">
       <p class="text-muted">
         This replaces your whole schedule with Benjamin Franklin's routine and saves it right away.
-        <template v-if="dirty"> Your unsaved changes will be lost.</template>
       </p>
       <div class="mt-6 flex flex-col gap-2 sm:flex-row-reverse">
-        <AppButton variant="danger" block :loading="resetting" @click="resetDefaults">Reset and save</AppButton>
+        <AppButton variant="danger" block :loading="resetting" @click="useTemplate">Reset and save</AppButton>
         <AppButton variant="ghost" block :disabled="resetting" @click="resetOpen = false">Cancel</AppButton>
       </div>
     </AppModal>
   </section>
 </template>
-
-<style scoped>
-.bar-enter-active, .bar-leave-active { transition: opacity 0.3s var(--ease), transform 0.3s var(--ease); }
-.bar-enter-from, .bar-leave-to { opacity: 0; transform: translateY(16px); }
-</style>
