@@ -11,7 +11,7 @@ export const SCHEDULE_MAX_BLOCKS = 30
 export const SCHEDULE_MAX_LABEL = 60
 export const MINUTES_PER_DAY = 24 * 60
 
-/** Benjamin Franklin's daily schedule (same as the server's seed). */
+/** Benjamin Franklin's daily schedule (an optional template, same as the server's). */
 export function franklinDefaultBlocks(): ScheduleBlockData[] {
   return [
     { id: 'rise-plan', label: 'Rise and plan', start: '05:00', end: '08:00', productive: false },
@@ -106,6 +106,21 @@ export function checkSchedule(blocks: ScheduleBlockData[]): ScheduleIssues {
   }
   if (blocks.length > SCHEDULE_MAX_BLOCKS) general.push(`A schedule can have at most ${SCHEDULE_MAX_BLOCKS} blocks.`)
   return { general: [...new Set(general)], blockIds }
+}
+
+/** Why this block cannot sit beside the others, naming the block in the way. */
+export function blockConflicts(block: ScheduleBlockData, others: ScheduleBlockData[]): string[] {
+  const problems: string[] = []
+  const mine = spans(block)
+  for (const other of others) {
+    if (!isValidClock(other.start) || !isValidClock(other.end) || other.start === other.end) continue
+    if (mine.some(([s, e]) => spans(other).some(([os, oe]) => s < oe && os < e))) {
+      problems.push(`This clashes with "${other.label}" (${scheduleClock(other.start)} to ${scheduleClock(other.end)}). Change the times, or edit that block first.`)
+    }
+  }
+  const overnight = blockIsOvernight(block) ? others.find(blockIsOvernight) : undefined
+  if (overnight) problems.push(`Only one block can run past midnight, and "${overnight.label}" already does.`)
+  return problems
 }
 
 /** Per-field problems for a single block. */

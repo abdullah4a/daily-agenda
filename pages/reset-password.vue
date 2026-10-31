@@ -39,7 +39,7 @@ async function submit() {
     </div>
     <form v-else class="mt-6 space-y-4" novalidate @submit.prevent="submit">
       <p v-if="formError" role="alert" class="rounded-xl bg-danger/10 px-4 py-3 text-sm font-medium text-danger">{{ formError }}</p>
-      <AppInput v-model="password" label="New password" type="password" autocomplete="new-password" required hint="At least 8 characters." :error="errors.password" />
+      <AppInput v-model="password" label="New password" type="password" autocomplete="new-password" required strength hint="At least 8 characters." :error="errors.password" />
       <AppInput v-model="confirm" label="Confirm password" type="password" autocomplete="new-password" required :error="errors.confirm" />
       <AppButton type="submit" block :loading="auth.loading">Update password</AppButton>
     </form>

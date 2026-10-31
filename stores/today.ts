@@ -11,6 +11,7 @@ interface TodayRead { body: TodayResponse, cached: boolean }
 export type AnswerField = 'morningAnswer' | 'eveningAnswer'
 export type SaveState = 'idle' | 'pending' | 'saving' | 'saved' | 'offline' | 'error' | 'auth'
 
+export type FieldStatus = 'saved' | 'saving' | 'offline' | 'error' | 'auth' | 'rejected'
 export type TodayEntry = DayEntry
 export type ParkedAnswer = Extract<SyncOp, { kind: 'answer' }>
 
@@ -75,6 +76,14 @@ export const useTodayStore = defineStore('today', () => {
     return sync.status === 'syncing' ? 'saving' : 'pending'
   })
   const saveError = computed(() => (sync.status === 'retrying' ? 'Could not reach the server. Your changes are kept here and will retry.' : ''))
+
+  /** What one field can truthfully say: only an answer the server has taken counts as saved. */
+  function fieldStatus(field: AnswerField): FieldStatus {
+    if (Object.keys(sync.rejected).some(k => k.endsWith(`:a:${date.value}:${field}`))) return 'rejected'
+    if (!dirty.value[field]) return 'saved'
+    const state = saveState.value
+    return state === 'offline' || state === 'error' || state === 'auth' ? state : 'saving'
+  }
 
   let debounceTimer: ReturnType<typeof setTimeout> | null = null
   let revalidateTimer: ReturnType<typeof setTimeout> | null = null
@@ -402,6 +411,12 @@ export const useTodayStore = defineStore('today', () => {
     await sync.trigger()
   }
 
+  /** Saves Franklin's template as this user's schedule. Throws so the page can show why it failed. */
+  async function applyTemplate() {
+    const res = await $fetch<{ blocks: DayBlock[] }>('/api/schedule', { method: 'PUT', body: { blocks: franklinDefaultBlocks() } })
+    blocks.value = res.blocks
+  }
+
   /** The page is leaving. Queued text stays queued. */
   function dispose() {
     clearTimers()
@@ -435,6 +450,6 @@ export const useTodayStore = defineStore('today', () => {
   return {
     date, drafts, dirty, blocks, checks, setCheck, entryStatus, entryError, scheduleStatus, scheduleError,
     saveState, saveError, offlineCopy, dayNotice, strandedOps, unsaved,
-    load, loadEntry, loadSchedule, refresh, rollover, setDraft, flush, reset, dispose, startEditing, stopEditing,
+    load, loadEntry, loadSchedule, applyTemplate, fieldStatus, refresh, rollover, setDraft, flush, reset, dispose, startEditing, stopEditing,
   }
 })
